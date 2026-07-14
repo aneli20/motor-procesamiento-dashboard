@@ -1,42 +1,53 @@
 # Motor de Procesamiento y Dashboard de Pedidos
 
-Sistema desarrollado en Laravel para procesar pedidos, clasificarlos por estado logístico y aplicar automáticamente un recargo de envío exprés a los pedidos que cumplen determinadas reglas de negocio.
+Sistema desarrollado en Laravel para procesar pedidos, clasificarlos por estado logistico y aplicar automaticamente un recargo de envio expres a los pedidos que cumplen reglas especificas de negocio.
 
-## Características
+## Resumen
 
-- Autenticación exclusiva mediante OAuth 2.0 utilizando GitHub y Laravel Socialite.
-- Dashboard protegido con cuatro categorías: **Por Enviar**, **Retrasados**, **Entregados** y **Cancelados**.
-- Paginación real desde base de datos.
-- Uso de Eloquent con relaciones entre `Cliente`, `Pedido` y `Producto`.
-- Eager Loading para evitar el problema N+1 al cargar clientes y productos.
-- Producto fijo `id = 5` (**Manejo Especial**) utilizado por el motor de recargo.
-- Comando Artisan `pedidos:aplicar-recargo-express` con soporte para `--dry-run`.
-- Proceso programado diariamente mediante Scheduler.
-- Seeders con datos de prueba para clientes, productos y pedidos.
+- Framework: Laravel 13.
+- PHP: 8.4 o superior dentro del contenedor Laravel Sail.
+- Base de datos: MySQL 8.4.
+- Entorno: Docker Compose con Laravel Sail.
+- Autenticacion: OAuth 2.0 con GitHub mediante Laravel Socialite.
+- Dashboard protegido con middleware `auth`.
+- Motor de recargo ejecutable por comando Artisan y programado con Laravel Scheduler.
+- Seeders con 100 clientes, 20 productos y 1,000 pedidos.
 - Pruebas automatizadas para dashboard, scopes y comando.
 
----
+## Requisitos Para Evaluar
 
-# Tecnologías
+El evaluador necesita tener instalado:
 
-- Laravel 13
-- PHP 8.2+
-- MySQL 8.4
-- Docker con Laravel Sail
-- Blade
-- Tailwind CSS 4
-- Vite
-- PHPUnit
+- Docker Desktop.
+- Git.
+- Una cuenta de GitHub para probar el acceso OAuth.
 
----
+No es necesario tener PHP, Composer, Node ni MySQL instalados localmente si se usa Docker.
 
-# Instalación en Windows (PowerShell)
+## Instalacion Rapida
 
-Antes de comenzar asegúrate de tener instalado y ejecutándose Docker Desktop.
+Clonar el repositorio y entrar a la carpeta:
+
+```powershell
+git clone https://github.com/aneli20/motor-procesamiento-dashboard.git
+cd motor-procesamiento-dashboard
+```
+
+Crear el archivo de entorno:
 
 ```powershell
 copy .env.example .env
+```
+
+Levantar los contenedores:
+
+```powershell
 docker compose up -d
+```
+
+Instalar dependencias y preparar la aplicacion:
+
+```powershell
 docker compose exec laravel.test composer install
 docker compose exec laravel.test php artisan key:generate
 docker compose exec laravel.test php artisan migrate:fresh --seed
@@ -44,15 +55,15 @@ docker compose exec laravel.test npm install
 docker compose exec laravel.test npm run build
 ```
 
-La aplicación quedará disponible en:
+La aplicacion queda disponible en:
 
-```
+```text
 http://localhost
 ```
 
-## Configuración de Base de Datos
+## Configuracion De Base De Datos
 
-El archivo `.env` debe utilizar la configuración de MySQL del contenedor Docker:
+El archivo `.env` debe usar la base de datos del contenedor MySQL:
 
 ```env
 DB_CONNECTION=mysql
@@ -63,54 +74,180 @@ DB_USERNAME=sail
 DB_PASSWORD=password
 ```
 
----
+## Configurar Acceso Con GitHub OAuth
 
-# Configurar GitHub OAuth
+El proyecto no tiene registro manual ni login por usuario y contrasena. El acceso al dashboard se hace exclusivamente con GitHub OAuth.
 
-1. En GitHub entra a:
+El evaluador debe crear su propia OAuth App en GitHub:
 
-```
-Settings
-Developer settings
-OAuth Apps
-New OAuth App
+```text
+GitHub > Settings > Developer settings > OAuth Apps > New OAuth App
 ```
 
-2. Configura los siguientes datos:
+Usar estos valores:
 
-- **Application name**
-
-```
+```text
+Application name:
 Motor de Pedidos
-```
 
-- **Homepage URL**
-
-```
+Homepage URL:
 http://localhost
-```
 
-- **Authorization callback URL**
-
-```
+Authorization callback URL:
 http://localhost/auth/github/callback
 ```
 
-3. Copia el **Client ID** y genera un **Client Secret**.
-
-4. Agrega las credenciales al archivo `.env`:
+Despues de crear la OAuth App, copiar el `Client ID`, generar un `Client Secret` y pegarlos en `.env`:
 
 ```env
-GITHUB_CLIENT_ID=
-GITHUB_CLIENT_SECRET=
+GITHUB_CLIENT_ID=PEGAR_CLIENT_ID_AQUI
+GITHUB_CLIENT_SECRET=PEGAR_CLIENT_SECRET_AQUI
 GITHUB_REDIRECT_URI=http://localhost/auth/github/callback
 ```
 
-No existe registro manual ni autenticación mediante usuario y contraseña. Todo el acceso al sistema se realiza utilizando GitHub OAuth.
+Si se cambia el puerto de la aplicacion, tambien se debe cambiar el callback en GitHub y en `.env`.
 
----
+## Como Entrar Al Dashboard
 
-# Comandos principales
+1. Abrir:
+
+```text
+http://localhost
+```
+
+2. Dar clic en `Continuar con GitHub`.
+3. Autorizar la OAuth App en GitHub.
+4. GitHub redirige a:
+
+```text
+http://localhost/auth/github/callback
+```
+
+5. Laravel crea o actualiza el usuario local con `provider = github` y `provider_id`.
+6. El usuario queda autenticado y entra a:
+
+```text
+http://localhost/dashboard
+```
+
+## Verificar Que Todo Funciona
+
+Ejecutar pruebas:
+
+```powershell
+docker compose exec laravel.test php artisan test
+```
+
+Ver rutas:
+
+```powershell
+docker compose exec laravel.test php artisan route:list
+```
+
+Ver tareas programadas:
+
+```powershell
+docker compose exec laravel.test php artisan schedule:list
+```
+
+Probar el motor sin modificar datos:
+
+```powershell
+docker compose exec laravel.test php artisan pedidos:aplicar-recargo-express --dry-run
+```
+
+Ejecutar el motor aplicando recargos:
+
+```powershell
+docker compose exec laravel.test php artisan pedidos:aplicar-recargo-express
+```
+
+## Dashboard De Logistica
+
+El dashboard clasifica los pedidos en cuatro categorias:
+
+- `Por Enviar`: pedidos con estado `pendiente` y fecha de entrega entre hoy y los proximos 3 dias.
+- `Retrasados`: pedidos con estado `pendiente` y fecha de entrega anterior a hoy.
+- `Entregados`: pedidos con estado `entregado`.
+- `Cancelados`: pedidos con estado `cancelado`.
+
+Cada tabla muestra:
+
+- Cliente.
+- Total.
+- Fecha de entrega.
+- Productos asociados.
+
+La consulta usa local scopes, paginacion real desde base de datos y eager loading con `with(['cliente', 'productos'])` para evitar N+1.
+
+## Motor De Recargo Expres
+
+El comando:
+
+```bash
+php artisan pedidos:aplicar-recargo-express
+```
+
+procesa unicamente pedidos que cumplen estas condiciones al mismo tiempo:
+
+- Estado igual a `pendiente`.
+- Fecha de entrega exactamente manana.
+- El pedido tiene asociado el producto con `id = 5` (`Manejo Especial`).
+- `express_charge_applied_at` es `NULL`.
+
+Cuando un pedido cumple las condiciones:
+
+- Suma 10% al campo `total`.
+- Redondea a dos decimales.
+- Guarda `express_charge_applied_at` para evitar aplicar el recargo dos veces.
+
+El filtro del producto se hace con la relacion de Eloquent mediante SQL, no cargando todos los productos en memoria.
+
+## Scheduler
+
+El comando esta programado para ejecutarse diariamente a medianoche:
+
+```php
+Schedule::command('pedidos:aplicar-recargo-express')
+    ->dailyAt('00:00')
+    ->withoutOverlapping();
+```
+
+Para probar el scheduler en desarrollo:
+
+```powershell
+docker compose exec laravel.test php artisan schedule:work
+```
+
+En produccion se debe configurar cron para ejecutar cada minuto:
+
+```bash
+php artisan schedule:run
+```
+
+## Datos De Prueba
+
+Los seeders crean automaticamente:
+
+- 100 clientes.
+- 20 productos.
+- 1,000 pedidos.
+- Entre 1 y 5 productos por pedido usando la tabla pivote `pedido_producto`.
+- Fechas de entrega pasadas, actuales y futuras.
+- Estados variados: `pendiente`, `entregado`, `cancelado`.
+- Casos positivos y negativos para validar el motor de recargo.
+
+El producto con `id = 5` es `Manejo Especial`.
+
+## URLs Principales
+
+| Recurso | URL |
+| --- | --- |
+| Login OAuth | http://localhost |
+| Dashboard | http://localhost/dashboard |
+| Callback OAuth | http://localhost/auth/github/callback |
+
+## Comandos Utiles
 
 ```powershell
 docker compose exec laravel.test php artisan migrate:fresh --seed
@@ -123,210 +260,72 @@ docker compose exec laravel.test php artisan optimize:clear
 docker compose exec laravel.test ./vendor/bin/pint
 ```
 
-Para ejecutar el Scheduler durante el desarrollo:
+## Detener Docker
 
-```powershell
-docker compose exec laravel.test php artisan schedule:work
-```
-
-En producción debe configurarse un cron (o el mecanismo equivalente del servidor) para ejecutar:
-
-```bash
-php artisan schedule:run
-```
-
-cada minuto.
-
----
-
-# Categorías del Dashboard
-
-El panel clasifica automáticamente los pedidos en cuatro categorías:
-
-### Por Enviar
-
-Pedidos con estado `pendiente` cuya fecha de entrega está comprendida entre hoy y los próximos tres días (incluyendo el día actual).
-
-### Retrasados
-
-Pedidos con estado `pendiente` cuya fecha de entrega es anterior al día de hoy.
-
-### Entregados
-
-Pedidos con estado:
-
-```
-entregado
-```
-
-### Cancelados
-
-Pedidos con estado:
-
-```
-cancelado
-```
-
-Cada tabla muestra:
-
-- Cliente
-- Total
-- Fecha de entrega
-- Productos asociados
-
----
-
-# Motor de Recargo Exprés
-
-El comando:
-
-```bash
-php artisan pedidos:aplicar-recargo-express
-```
-
-procesa únicamente los pedidos que cumplen todas las siguientes condiciones:
-
-- Estado igual a `pendiente`.
-- Fecha de entrega exactamente el día de mañana.
-- El pedido contiene el producto con `id = 5` (**Manejo Especial**).
-- El campo `express_charge_applied_at` es `NULL`.
-
-Cuando un pedido cumple dichas condiciones:
-
-- Incrementa el total en un **10%**.
-- Redondea el resultado a dos decimales.
-- Guarda la fecha de aplicación en `express_charge_applied_at` para evitar aplicar nuevamente el recargo.
-
-El parámetro:
-
-```bash
---dry-run
-```
-
-permite visualizar los pedidos elegibles sin modificar la base de datos.
-
----
-
-# Datos de prueba
-
-Los Seeders generan automáticamente:
-
-- 100 clientes.
-- 20 productos.
-- 1,000 pedidos.
-- Entre 1 y 5 productos por pedido.
-- Fechas de entrega pasadas, actuales y futuras.
-- Casos positivos y negativos para validar el motor de recargo.
-
----
-
-# Pruebas
-
-Ejecutar todas las pruebas:
-
-```powershell
-docker compose exec laravel.test php artisan test
-```
-
-Si se ejecuta fuera de Docker en Windows y aparece un error relacionado con Symfony Process, puede utilizarse:
-
-```powershell
-vendor\bin\phpunit.bat --do-not-cache-result
-```
-
----
-
-# URLs principales
-
-| Recurso | URL |
-|---------|-----|
-| Login OAuth | http://localhost |
-| Dashboard | http://localhost/dashboard |
-| Callback OAuth | http://localhost/auth/github/callback |
-
----
-
-# Docker
-
-Detener los contenedores:
+Detener contenedores:
 
 ```powershell
 docker compose down
 ```
 
-Detener los contenedores y eliminar el volumen de MySQL:
+Detener contenedores y eliminar el volumen de MySQL:
 
 ```powershell
 docker compose down -v
 ```
 
----
+## Errores Comunes
 
-# Errores comunes
+### Docker no responde
 
-### Error
+Error posible:
 
-```
+```text
 permission denied while trying to connect to docker_engine
 ```
 
-**Solución**
+Solucion:
 
 - Abrir Docker Desktop.
-- Verificar que Docker esté iniciado.
+- Verificar que Docker este iniciado.
 - Ejecutar la terminal con permisos suficientes.
 
----
+### Vite manifest not found
 
-### Error
-
-```
-Vite manifest not found
-```
-
-**Solución**
+Ejecutar:
 
 ```powershell
 docker compose exec laravel.test npm run build
 ```
 
----
+### Error De OAuth
 
-### Error de OAuth
+Verificar que estos valores coincidan exactamente:
 
-Verificar que el valor de:
+- Callback configurado en GitHub.
+- `GITHUB_REDIRECT_URI` en `.env`.
+- URL real donde esta corriendo la aplicacion.
 
-```env
-GITHUB_REDIRECT_URI
+Para este proyecto local deben ser:
+
+```text
+http://localhost/auth/github/callback
 ```
 
-coincida exactamente con la URL configurada en GitHub.
+### Error Al Ejecutar Artisan Fuera De Docker
 
----
+Si se ejecuta `php artisan` directamente en Windows, puede fallar por la version local de PHP.
 
-### Error con `schedule:list`
-
-Si el comando intenta conectarse a MySQL y falla:
-
-- Verificar que los contenedores estén ejecutándose.
-- Ejecutar el comando dentro del contenedor Docker.
-
----
-
-# Publicar en GitHub
+Recomendacion para evaluacion:
 
 ```powershell
-git init
-git add .
-git commit -m "Implement motor de pedidos"
-git branch -M main
-git remote add origin https://github.com/TU_USUARIO/TU_REPO.git
-git push -u origin main
+docker compose exec laravel.test php artisan test
 ```
 
-Si el repositorio es privado, invita al evaluador desde:
+El proyecto esta preparado para ejecutarse dentro del contenedor de Laravel Sail.
 
-```
-Settings
-Collaborators and teams
-```
+## Nota Para El Evaluador
+
+Las credenciales de GitHub OAuth no se incluyen en el repositorio por seguridad. Cada evaluador debe crear su propia OAuth App y colocar sus valores en `.env`.
+
+Una vez configurado OAuth, no se necesita ningun usuario o contrasena de prueba: se entra con la cuenta de GitHub del evaluador.
