@@ -13,7 +13,7 @@ class AplicarRecargoExpressCommandTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_command_applies_ten_percent_only_to_eligible_orders_and_is_idempotent(): void
+    public function test_command_applies_ten_percent_only_to_eligible_orders(): void
     {
         $cliente = Cliente::factory()->create();
         Producto::factory()->create(['id' => 5, 'nombre' => 'Manejo Especial']);
@@ -30,18 +30,9 @@ class AplicarRecargoExpressCommandTest extends TestCase
             ->assertSuccessful();
 
         $this->assertSame('110.00', $eligible->fresh()->total);
-        $this->assertNotNull($eligible->fresh()->express_charge_applied_at);
         $this->assertSame('200.00', $notPending->fresh()->total);
         $this->assertSame('300.00', $notTomorrow->fresh()->total);
         $this->assertSame('400.00', $withoutProduct->fresh()->total);
-
-        $this->artisan('pedidos:aplicar-recargo-express')
-            ->expectsOutput('Pedidos encontrados: 0')
-            ->expectsOutput('No existen pedidos elegibles para recargo express.')
-            ->expectsOutput('Pedidos procesados: 0')
-            ->assertSuccessful();
-
-        $this->assertSame('110.00', $eligible->fresh()->total);
     }
 
     public function test_dry_run_does_not_modify_orders(): void
@@ -56,7 +47,6 @@ class AplicarRecargoExpressCommandTest extends TestCase
             ->assertSuccessful();
 
         $this->assertSame('150.00', $eligible->fresh()->total);
-        $this->assertNull($eligible->fresh()->express_charge_applied_at);
     }
 
     private function pedido(int $clienteId, string $fecha, PedidoEstado $estado, string $total, array $productoIds): Pedido

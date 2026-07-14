@@ -15,7 +15,6 @@ return new class extends Migration
             $table->date('fecha_entrega')->index();
             $table->decimal('total', 12, 2);
             $table->string('estado')->default(PedidoEstado::Pendiente->value)->index();
-            $table->timestamp('express_charge_applied_at')->nullable()->index();
             $table->timestamps();
 
             $table->index(['estado', 'fecha_entrega']);

@@ -33,7 +33,6 @@ class PedidoSeeder extends Seeder
                 'fecha_entrega' => $escenarios[$i]['fecha_entrega'] ?? $this->fechaAleatoria(),
                 'total' => $this->sumarProductos($productoSeleccionados, $precios),
                 'estado' => $escenarios[$i]['estado'] ?? fake()->randomElement(PedidoEstado::cases())->value,
-                'express_charge_applied_at' => null,
                 'created_at' => $now,
                 'updated_at' => $now,
             ];

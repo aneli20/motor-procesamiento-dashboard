@@ -44,7 +44,6 @@ class AplicarRecargoExpress
 
                     $locked->forceFill([
                         'total' => $nuevoTotal,
-                        'express_charge_applied_at' => now(),
                     ])->save();
 
                     $ids[] = (int) $locked->id;

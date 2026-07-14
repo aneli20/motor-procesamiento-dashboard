@@ -23,7 +23,6 @@ class Pedido extends Model
         'fecha_entrega',
         'total',
         'estado',
-        'express_charge_applied_at',
     ];
 
     protected function casts(): array
@@ -32,7 +31,6 @@ class Pedido extends Model
             'fecha_entrega' => 'date',
             'total' => 'decimal:2',
             'estado' => PedidoEstado::class,
-            'express_charge_applied_at' => 'datetime',
         ];
     }
 
@@ -81,7 +79,6 @@ class Pedido extends Model
         return $query
             ->where('estado', PedidoEstado::Pendiente->value)
             ->whereDate('fecha_entrega', $manana)
-            ->whereNull('express_charge_applied_at')
             ->whereHas('productos', fn (Builder $query): Builder => $query->whereKey(self::MANEJO_ESPECIAL_PRODUCTO_ID));
     }
 }

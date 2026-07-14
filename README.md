@@ -193,13 +193,11 @@ procesa unicamente pedidos que cumplen estas condiciones al mismo tiempo:
 - Estado igual a `pendiente`.
 - Fecha de entrega exactamente manana.
 - El pedido tiene asociado el producto con `id = 5` (`Manejo Especial`).
-- `express_charge_applied_at` es `NULL`.
 
 Cuando un pedido cumple las condiciones:
 
 - Suma 10% al campo `total`.
 - Redondea a dos decimales.
-- Guarda `express_charge_applied_at` para evitar aplicar el recargo dos veces.
 
 El filtro del producto se hace con la relacion de Eloquent mediante SQL, no cargando todos los productos en memoria.
 
