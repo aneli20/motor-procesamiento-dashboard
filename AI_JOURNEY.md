@@ -2,7 +2,7 @@
 
 ## 1. Contexto del uso de IA
 
-Utilicé la IA como una herramienta de apoyo durante el desarrollo del proyecto. Principalmente la empleé para resolver dudas específicas sobre Laravel, generar ejemplos de seeders, optimizar consultas con Eloquent y revisar la documentación. La implementación, integración de los componentes, configuración del entorno y validación del funcionamiento fueron realizadas y verificadas manualmente.
+Utilicé la IA como  una herramienta de apoyo durante el desarrollo del proyecto. Principalmente la empleé para resolver dudas específicas sobre Laravel, generar ejemplos de seeders, optimizar consultas con Eloquent y revisar la documentación. La implementación, integración de los componentes, configuración del entorno y validación del funcionamiento fueron realizadas y verificadas manualmente.
 
 ## 2. Prompts principales
 
